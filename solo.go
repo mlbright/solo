@@ -31,7 +31,6 @@ where
 options
     -verbose	be verbose
     -silent		be silent
-    -timeout    time out after n seconds
     -sleep      sleep n seconds before running command
     -noport     do not specify port, i.e. do not implement locking
 
@@ -43,7 +42,6 @@ example:
 func main() {
 
 	flag.Int64Var(&sleep, "sleep", 0, "sleep X seconds before running command")
-	flag.IntVar(&timeout, "timeout", 0, "timeout after X seconds before running command")
 	flag.BoolVar(&verbose, "verbose", false, "verbose output")
 	flag.BoolVar(&silent, "silent", false, "omit locking message")
 	flag.BoolVar(&noport, "noport", false, "omit port, i.e. do not implement locking")
