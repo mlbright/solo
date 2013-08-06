@@ -1,34 +1,39 @@
 /*
 
-Adaptation of Tim Kay's solo (http://timkay.com/solo/) to the Go programming language
+Variation of Tim Kay's solo (http://timkay.com/solo/) written in Go (Golang)
 
 */
 
 package main
 
 import (
-	// "net"
 	"flag"
 	"log"
+	"net"
+	"os"
 	"os/exec"
 	"time"
 )
 
-var port int
-var verbose bool
-var silent bool
+var port string
+var verbose, silent, noport bool
 var sleep int64
 var timeout int
 
-const usage string = `Usage: solo -port=PORT COMMAND
+const usage string = `
+
+Usage: solo -port=PORT COMMAND
 
 where
 	PORT		some arbitrary port number to be used for locking
 	COMMAND		shell command to run
 
 options
-	-verbose	be verbose
-	-silent		be silent
+    -verbose	be verbose
+    -silent		be silent
+    -timeout    time out after n seconds
+    -sleep      sleep n seconds before running command
+    -noport     do not specify port, i.e. do not implement locking
 
 example:
 
@@ -39,20 +44,42 @@ func main() {
 
 	flag.Int64Var(&sleep, "sleep", 0, "sleep X seconds before running command")
 	flag.IntVar(&timeout, "timeout", 0, "timeout after X seconds before running command")
-	flag.IntVar(&port, "port", 0, "port to bind to for locking")
 	flag.BoolVar(&verbose, "verbose", false, "verbose output")
 	flag.BoolVar(&silent, "silent", false, "omit locking message")
+	flag.BoolVar(&noport, "noport", false, "omit port, i.e. do not implement locking")
+	flag.StringVar(&port, "port", "", "arbitrary port number")
 
 	flag.Parse()
-	args := flag.Args()
+
+	if port == "" && !noport {
+        log.Println("wtf2")
+		log.Fatal(usage)
+	}
+
+	if port != "" {
+		if verbose {
+			log.Println("solo: binding on port", port)
+		}
+		if lock, listenerr := net.Listen("tcp", ":"+port); listenerr != nil {
+			if silent {
+				os.Exit(1)
+			} else {
+				log.Println("solo(", port, ")")
+				log.Fatal(listenerr)
+			}
+		} else {
+			defer lock.Close()
+		}
+	}
 
 	if sleep > 0 {
 		time.Sleep(time.Duration(sleep) * time.Second)
 	}
-	command := args[0]
-	args = args[1:]
-	cmd := exec.Command(command, args...)
+	cmd := exec.Command(flag.Args()[0], flag.Args()[1:]...)
 	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
 }
