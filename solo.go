@@ -52,7 +52,6 @@ func main() {
 	flag.Parse()
 
 	if port == "" && !noport {
-        log.Println("wtf2")
 		log.Fatal(usage)
 	}
 
